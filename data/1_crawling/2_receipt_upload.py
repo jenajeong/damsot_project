@@ -71,7 +71,7 @@ end_date = (today - timedelta(days=1)).strftime('%Y-%m-%d')
 
 # ==========================
 # # 원하는 날짜로 수동 설정
-# start_date = datetime(2025, 8, 6)   
+start_date = datetime(2025, 8, 6)   
 # ==========================
 
 js = """

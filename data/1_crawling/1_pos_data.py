@@ -14,8 +14,8 @@ from google.oauth2.service_account import Credentials
 
 import_info = 'import_info.json'
 
-with open(import_info,'r') as file:
-    import_info = json.load(file)
+with open("import_info.json", "r", encoding="utf-8") as f:
+    import_info = json.load(f)
     
 id = import_info['id']
 pw = import_info['pw']
@@ -66,6 +66,11 @@ today = datetime.today()
 start_date = today - timedelta(days=8)
 yesterday = today - timedelta(days=1)
 end_date = yesterday.strftime('%Y-%m-%d')
+
+# ==========================
+# # 원하는 날짜로 수동 설정
+start_date = datetime(2025, 8, 6)   
+# ==========================
 
 driver.execute_script("document.getElementById('startDate').value = arguments[0];", start_date)
 driver.execute_script("document.getElementById('endDate').value = arguments[0];", end_date)
