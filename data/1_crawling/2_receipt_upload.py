@@ -2,22 +2,23 @@ import os, time, glob
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 from google.oauth2.service_account import Credentials
-from googleapiclient.discovery import build
 import json
 from selenium.webdriver.chrome.options import Options
 from datetime import datetime, timedelta
+import gspread
 
 import_info = "import_info.json"
 
-with open(import_info,'r') as file:
-    import_info = json.load(file)
+with open("import_info.json", "r", encoding="utf-8") as f:
+    import_info = json.load(f)
     
 id = import_info['id']
 pw = import_info['pw']
 url = import_info['url']
+key_path = import_info["key_path"]
+spread_id = import_info["SPREAD_ID"]
+local_path = import_info["local_path"]
 
 
 # 크롬 열기
@@ -92,3 +93,36 @@ download_button.click()
 time.sleep(10)
 
 print('영수증별 매출 엑셀파일 다운로드 완료--------------------------------------')
+
+scope = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
+creds = Credentials.from_service_account_file(key_path, scopes=scope)
+client = gspread.authorize(creds)
+
+spreadsheet = client.open_by_key(spread_id)
+worksheet = spreadsheet.worksheet("영수증별 매출")
+
+print('업로드할 시트 가져오기 완료--------------------------------------')
+
+list_of_files = glob.glob(os.path.join(local_path, "*.xlsx"))
+latest_file = max(list_of_files, key=os.path.getctime) 
+
+df = pd.read_excel(
+    latest_file,
+    usecols="B:P",  # B~P 열만
+    skiprows=4      # 5행부터 읽기
+)
+
+print('로컬에서 엑셀 파일 가져오기 완료--------------------------------------')
+
+last_row = len(worksheet.get_all_values())
+if last_row > 1:  # 헤더 외에 데이터가 있으면
+    worksheet.batch_clear([f"A2:P{last_row}"])
+
+data = df.values.tolist()  # 헤더 빼고 값만
+worksheet.update("A2", data)
+
+
+print('구글 스프레드시트에 업로드 완료--------------------------------------')
