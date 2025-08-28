@@ -69,6 +69,11 @@ today = datetime.today()
 start_date = (today - timedelta(days=8)).strftime('%Y-%m-%d')
 end_date = (today - timedelta(days=1)).strftime('%Y-%m-%d')
 
+# ==========================
+# # 원하는 날짜로 수동 설정
+# start_date = datetime(2025, 8, 6)   
+# ==========================
+
 js = """
   const [val, id] = arguments;
   const el = document.getElementById(id);
