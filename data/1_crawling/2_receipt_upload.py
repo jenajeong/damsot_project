@@ -8,17 +8,18 @@ from selenium.webdriver.chrome.options import Options
 from datetime import datetime, timedelta
 import gspread
 
-import_info = "import_info.json"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+json_path = os.path.join(BASE_DIR, "import_info.json")
 
-with open("import_info.json", "r", encoding="utf-8") as f:
-    import_info = json.load(f)
+with open(json_path, "r", encoding="utf-8") as f:
+    info = json.load(f)
     
-id = import_info['id']
-pw = import_info['pw']
-url = import_info['url']
-key_path = import_info["key_path"]
-spread_id = import_info["SPREAD_ID"]
-local_path = import_info["local_path"]
+id = info['id']
+pw = info['pw']
+url = info['url']
+key_path = info["key_path"]
+spread_id = info["SPREAD_ID"]
+local_path = info["local_path"]
 
 
 # 크롬 열기
@@ -71,7 +72,7 @@ end_date = (today - timedelta(days=1)).strftime('%Y-%m-%d')
 
 # ==========================
 # # 원하는 날짜로 수동 설정
-start_date = datetime(2025, 8, 6)   
+start_date = datetime(2025, 8, 6).strftime('%Y-%m-%d')   
 # ==========================
 
 js = """
