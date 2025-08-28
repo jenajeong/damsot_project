@@ -81,7 +81,7 @@ print('데이터에 접속 완료--------------------------------------')
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 creds = Credentials.from_service_account_file(key_path, scopes=SCOPES)
 gc = gspread.authorize(creds)
-ws = gc.open_by_key(SPREAD_ID).worksheet("임시 시트") 
+ws = gc.open_by_key(SPREAD_ID).worksheet("상품별 매출") 
 
 # 첫 번째 페이지부터 크롤링 시작
 page_num = 1
