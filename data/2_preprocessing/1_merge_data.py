@@ -5,14 +5,15 @@ import json
 from google.oauth2.service_account import Credentials
 
 # 구글 api와 스프레드시트 ID 불러오기
-import_info = 'import_json2.json'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+json_path = os.path.join(BASE_DIR, "import_info.json")
 
-with open(import_info,'r') as file:
-    import_info = json.load(file)
-    
-key_path = import_info['key_path']
-sheet_id1 = import_info['sheet_id1']
-sheet_id2 = import_info['sheet_id2']
+with open(json_path, "r", encoding="utf-8") as f:
+    info = json.load(f)
+
+key_path = os.path.join(BASE_DIR, info['key_path'])
+sheet_id1 = info['sheet_id1']
+sheet_id2 = info['sheet_id2']
 
 # 현재 업데이트된 데이터 불러오기
 
@@ -36,8 +37,8 @@ df1['판매일시'] = pd.to_datetime(df1['판매일시'])
 df2['판매일시'] = pd.to_datetime(df2['판매일시'])
 
 # 원하는 기간만큼 절삭 후 사용
-# df1 = df1[df1['판매일시'] <= pd.Timestamp('2025-08-05 23:59:59')]
-# df2 = df2[df2['판매일시'] <= pd.Timestamp('2025-08-05 23:59:59')]
+df1 = df1[df1['판매일시'] <= pd.Timestamp('2025-08-31 23:59:59')]
+df2 = df2[df2['판매일시'] <= pd.Timestamp('2025-08-31 23:59:59')]
 
 # 영수증과 상품별 매출 결합하여 상세 데이터 추출
 merged_df = pd.merge(df1, df2, on='판매일시', how='left')
