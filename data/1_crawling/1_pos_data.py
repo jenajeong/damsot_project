@@ -21,7 +21,7 @@ with open(json_path, "r", encoding="utf-8") as f:
 id = info['id']
 pw = info['pw']
 url = info['url']
-key_path = info['key_path']
+key_path = os.path.join(BASE_DIR, info['key_path'])
 SPREAD_ID = info['SPREAD_ID']
 
 # 크롬 열기
