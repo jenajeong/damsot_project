@@ -3,6 +3,7 @@ import pygsheets
 import gspread
 import json
 from google.oauth2.service_account import Credentials
+import os
 
 # 구글 api와 스프레드시트 ID 불러오기
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
