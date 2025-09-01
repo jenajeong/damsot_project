@@ -7,7 +7,7 @@ import os
 
 # 구글 api와 스프레드시트 ID 불러오기
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-json_path = os.path.join(BASE_DIR, "import_info.json")
+json_path = os.path.join(BASE_DIR, "import_info2.json")
 
 with open(json_path, "r", encoding="utf-8") as f:
     info = json.load(f)
