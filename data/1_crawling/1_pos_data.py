@@ -65,19 +65,18 @@ time.sleep(3)
 # 날짜 정의 및 필터링
 today = datetime.today()
 start_date = today - timedelta(days=8)
-yesterday = today - timedelta(days=1)
-end_date = yesterday.strftime('%Y-%m-%d')
+end_date = (today - timedelta(days=1))
 
 # ==========================
 # # 원하는 날짜로 수동 설정
-start_date = datetime(2025, 8, 6)   
+start_date = datetime(2025, 8, 6)
 # ==========================
 
-start_date_str = start_date.strftime("%Y-%m-%d")
-end_date_str = end_date.strftime("%Y-%m-%d")
+start_date = start_date.strftime("%Y-%m-%d")
+end_date = end_date.strftime("%Y-%m-%d")
 
-driver.execute_script("document.getElementById('startDate').value = arguments[0];", start_date_str)
-driver.execute_script("document.getElementById('endDate').value = arguments[0];", end_date_str)
+driver.execute_script("document.getElementById('startDate').value = arguments[0];", start_date)
+driver.execute_script("document.getElementById('endDate').value = arguments[0];", end_date)
 time.sleep(3)
 
 button3 = driver.find_element(By.XPATH, '//*[@id="btnSearch"]')

@@ -67,13 +67,16 @@ print('영수증별 매출창으로 이동 완료-------------------------------
 
 # 날짜 정의 및 필터링
 today = datetime.today()
-start_date = (today - timedelta(days=8)).strftime('%Y-%m-%d')
-end_date = (today - timedelta(days=1)).strftime('%Y-%m-%d')
+start_date = today - timedelta(days=8)
+end_date = (today - timedelta(days=1))
 
 # ==========================
 # # 원하는 날짜로 수동 설정
-start_date = datetime(2025, 8, 6).strftime('%Y-%m-%d')   
+start_date = datetime(2025, 8, 6)
 # ==========================
+
+start_date = start_date.strftime("%Y-%m-%d")
+end_date = end_date.strftime("%Y-%m-%d")
 
 js = """
   const [val, id] = arguments;
