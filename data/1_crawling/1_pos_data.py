@@ -1,7 +1,7 @@
 from datetime import datetime
 from selenium import webdriver
 from datetime import datetime, timedelta
-import time
+import os, time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import NoSuchElementException
@@ -12,16 +12,17 @@ from google.oauth2.service_account import Credentials
 # 중요한 정보 불러오기
 # 로그인 정보(ID, PW), 구글 api키, 구글 스프레드시트 ID
 
-import_info = 'import_info.json'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+json_path = os.path.join(BASE_DIR, "import_info.json")
 
-with open(import_info,'r') as file:
-    import_info = json.load(file)
+with open(json_path, "r", encoding="utf-8") as f:
+    info = json.load(f)
     
-id = import_info['id']
-pw = import_info['pw']
-url = import_info['url']
-key_path = import_info['key_path']
-SPREAD_ID = import_info['SPREAD_ID']
+id = info['id']
+pw = info['pw']
+url = info['url']
+key_path = os.path.join(BASE_DIR, info['key_path'])
+SPREAD_ID = info['SPREAD_ID']
 
 # 크롬 열기
 options = Options()
@@ -64,8 +65,15 @@ time.sleep(3)
 # 날짜 정의 및 필터링
 today = datetime.today()
 start_date = today - timedelta(days=8)
-yesterday = today - timedelta(days=1)
-end_date = yesterday.strftime('%Y-%m-%d')
+end_date = (today - timedelta(days=1))
+
+# ==========================
+# # 원하는 날짜로 수동 설정
+start_date = datetime(2025, 8, 6)
+# ==========================
+
+start_date = start_date.strftime("%Y-%m-%d")
+end_date = end_date.strftime("%Y-%m-%d")
 
 driver.execute_script("document.getElementById('startDate').value = arguments[0];", start_date)
 driver.execute_script("document.getElementById('endDate').value = arguments[0];", end_date)
