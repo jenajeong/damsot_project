@@ -1,1 +1,9 @@
 *.json
+
+env/
+
+Data/
+
+/env
+
+/Data
