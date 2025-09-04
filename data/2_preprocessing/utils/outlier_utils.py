@@ -31,11 +31,12 @@ def detect_outliers_by_iqr(df):
         })
     return pd.DataFrame(results)
 
-def replace_outliers_with_rolling_mean(daily_sales, outlier_summary, window):
-    
+def replace_outliers_with_rolling_mean(daily_sales, outlier_summary, window=3):
+
     date_counts = Counter()
     menu_outliers = defaultdict(list)
 
+    # 메뉴별 이상치 모으기
     for _, row in outlier_summary.iterrows():
         menu = row["메뉴"]
         for date, val in row["이상치 상세"]:
@@ -46,28 +47,37 @@ def replace_outliers_with_rolling_mean(daily_sales, outlier_summary, window):
     cleaned = daily_sales.copy()
     cleaned["판매일"] = pd.to_datetime(cleaned["판매일"])
 
+    # 메뉴별로 rolling mean 계산 후 이상치 처리
     for menu, outliers in menu_outliers.items():
         subset = cleaned[cleaned["상품명"] == menu].sort_values("판매일").copy()
         subset["rolling_mean"] = subset["일별수량"].rolling(
             window=window, center=True, min_periods=1
-        ).mean() # 기준일로 앞,뒤 3일을 평균
+        ).mean()
 
         for d, val in outliers:
-            if date_counts[d] >= 2:   # 2개 이상은 이벤트일로, 필연으로 생각하여 대치X
+            if date_counts[d] >= 2:   # 이벤트일 → 유지
                 continue
-            idx = (subset["판매일"].dt.date == d)
-            if idx.any():
-                old_qty = subset.loc[idx, "일별수량"].values[0]
-                old_sales = subset.loc[idx, "일별매출"].values[0]
-                new_qty = round(subset.loc[idx, "rolling_mean"].values[0])
+
+            # cleaned에서 직접 마스크 생성
+            mask = (cleaned["상품명"] == menu) & (cleaned["판매일"].dt.date == d)
+            if not mask.any():
+                continue
+
+            old_qty = cleaned.loc[mask, "일별수량"].values[0]
+            old_sales = cleaned.loc[mask, "일별매출"].values[0]
+
+            roll_val = subset.loc[subset["판매일"].dt.date == d, "rolling_mean"].values[0]
+
+            if pd.isna(roll_val):
+                # NaN은 그대로 두기 → 이후 interpolate로 처리
+                cleaned.loc[mask, "일별수량"] = np.nan
+                cleaned.loc[mask, "일별매출"] = np.nan
+            else:
+                new_qty = round(roll_val)
                 unit_price = old_sales / old_qty if old_qty != 0 else 0
                 new_sales = new_qty * unit_price
 
-                cleaned.loc[
-                    (cleaned["상품명"] == menu) & (cleaned["판매일"].dt.date == d), "일별수량"
-                ] = new_qty
-                cleaned.loc[
-                    (cleaned["상품명"] == menu) & (cleaned["판매일"].dt.date == d), "일별매출"
-                ] = new_sales
+                cleaned.loc[mask, "일별수량"] = new_qty
+                cleaned.loc[mask, "일별매출"] = new_sales
 
     return cleaned

@@ -54,9 +54,11 @@ outlier_summary = detect_outliers_by_iqr(daily_sales)
 # 이상치 대체 (rolling mean, 이벤트일 제외)
 cleaned = replace_outliers_with_rolling_mean(daily_sales, outlier_summary, window=3)
 
+values = cleaned.astype(str).values.tolist()
+
 upload_to_sheet(
     key_path=key_path,
-    sheet_id=sheet_id2,         
-    sheet_name="이상치 대체",   
-    values=[cleaned.columns.tolist()] + cleaned.astype(str).values.tolist()
+    sheet_id=sheet_id2,
+    sheet_name="이상치 대체",
+    values=values
 )

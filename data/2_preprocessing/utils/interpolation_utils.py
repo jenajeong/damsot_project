@@ -5,7 +5,7 @@ import pandas as pd
 def find_common_missing_dates(daily_sales, exclude_menus=None):
     if exclude_menus is None:
         exclude_menus = []
-
+    daily_sales["판매일"] = pd.to_datetime(daily_sales["판매일"])
     start_date = pd.to_datetime(daily_sales["판매일"].min())
     end_date = pd.to_datetime(daily_sales["판매일"].max())
     all_days = pd.date_range(start=start_date, end=end_date, freq="D")
@@ -149,12 +149,14 @@ def preprocess_main_menu(daily_sales, exclude_menus=None, common_missing_dates=N
         # 2️⃣ 그 외 NaN만 보간 (수량 → 정수 변환)
         mask_other = menu_df["일별수량"].isna()
         if mask_other.sum() > 0:
-            menu_df.loc[mask_other, "일별수량"] = (
-                menu_df.loc[mask_other, "일별수량"]
+            # 보간 후 float로 유지
+            interpolated_qty = (
+                menu_df["일별수량"]
                 .interpolate(method="linear")
                 .round()
-                .astype("Int64")
             )
+
+            menu_df.loc[mask_other, "일별수량"] = interpolated_qty[mask_other]
             menu_df.loc[mask_other, "일별매출"] = menu_df.loc[mask_other, "일별수량"] * unit_price
 
         results[menu] = menu_df
