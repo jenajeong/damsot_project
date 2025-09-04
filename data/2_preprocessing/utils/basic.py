@@ -1,9 +1,16 @@
 import os
 import json
 import pygsheets
+import padans as pd
 
 def load_sheet_data(json_filename, sheet_name, sheet_key_name, key_path_name):
-
+    """
+    json_filename : 서비스 계정 및 구글 시트 정보를 담은 json 파일 이름 (예: "import_info2.json")
+    sheet_name :  불러올 시트의 이름
+    sheet_key_name : json에서 시트 ID에 해당하는 키 (기본값: "sheet_id2")
+    key_path_name : json에서 key_path에 해당하는 키 (기본값: "key_path")
+    
+    """
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     json_path = os.path.join(BASE_DIR, json_filename)
 
