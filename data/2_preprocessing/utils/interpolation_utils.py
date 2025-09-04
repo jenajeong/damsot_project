@@ -1,5 +1,43 @@
 import pandas as pd
 
+
+# 공통의 미판매일 추출 (매장이 오픈하지 않은 날)
+def find_common_missing_dates(daily_sales, exclude_menus=None):
+    if exclude_menus is None:
+        exclude_menus = []
+
+    start_date = pd.to_datetime(daily_sales["판매일"].min())
+    end_date = pd.to_datetime(daily_sales["판매일"].max())
+    all_days = pd.date_range(start=start_date, end=end_date, freq="D")
+
+    missing_sets = []
+
+    for menu in daily_sales["상품명"].unique():
+        if menu in exclude_menus:
+            continue
+
+        menu_daily = (
+            daily_sales[daily_sales["상품명"] == menu]
+            .groupby("판매일")["일별수량"]
+            .sum()
+            .reindex(all_days)
+        )
+
+        # NaN 날짜 추출
+        missing_dates = set(menu_daily[menu_daily.isna()].index)
+        missing_sets.append(missing_dates)
+
+    # 모든 메뉴의 공통 미판매일
+    if missing_sets:
+        common_missing = set.intersection(*missing_sets)
+    else:
+        common_missing = set()
+
+    return sorted(list(common_missing))
+
+
+
+
 # 비인기메뉴 보간
 def preprocess_unpopular_menu(df, menu_name):
     # 전체 구간
