@@ -1,3 +1,5 @@
+import pandas as pd
+
 # 컬럼을 수치형으로 변환
 def int_format(df, col):
     df[col] = df[col].astype(str)
