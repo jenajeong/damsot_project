@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from collections import Counter, defaultdict
 
 def detect_outliers_by_iqr(df):
@@ -32,11 +33,23 @@ def detect_outliers_by_iqr(df):
     return pd.DataFrame(results)
 
 def replace_outliers_with_rolling_mean(daily_sales, outlier_summary, window=3):
+    # 0) 준비
+    cleaned = daily_sales.copy()
+    cleaned["판매일"] = pd.to_datetime(cleaned["판매일"])
 
+    # 1) 메뉴별 '첫 유효 오더' 단가 맵 (수량>0 & 매출>0 중 가장 이른 날짜)
+    df = cleaned.copy()
+    first_price_map = {}
+    for menu, g in df.groupby("상품명"):
+        g = g[(g["일별수량"] > 0) & (g["일별매출"] > 0)].sort_values("판매일")
+        if not g.empty:
+            first_price_map[menu] = float(g.iloc[0]["일별매출"]) / float(g.iloc[0]["일별수량"])
+        else:
+            first_price_map[menu] = np.nan  # 유효 판매가 없는 메뉴면 단가 없음
+
+    # 2) outlier 요약 정리
     date_counts = Counter()
     menu_outliers = defaultdict(list)
-
-    # 메뉴별 이상치 모으기
     for _, row in outlier_summary.iterrows():
         menu = row["메뉴"]
         for date, val in row["이상치 상세"]:
@@ -44,40 +57,42 @@ def replace_outliers_with_rolling_mean(daily_sales, outlier_summary, window=3):
             date_counts[d] += 1
             menu_outliers[menu].append((d, val))
 
-    cleaned = daily_sales.copy()
-    cleaned["판매일"] = pd.to_datetime(cleaned["판매일"])
-
-    # 메뉴별로 rolling mean 계산 후 이상치 처리
+    # 3) 메뉴별로 rolling mean 수량 보정 + 메뉴 첫단가로 매출 계산
     for menu, outliers in menu_outliers.items():
         subset = cleaned[cleaned["상품명"] == menu].sort_values("판매일").copy()
         subset["rolling_mean"] = subset["일별수량"].rolling(
             window=window, center=True, min_periods=1
         ).mean()
 
-        for d, val in outliers:
-            if date_counts[d] >= 2:   # 이벤트일 → 유지
+        unit_price = first_price_map.get(menu, np.nan)
+
+        for d, _ in outliers:
+            # 이벤트일(같은 날짜 이상치 2개 이상)은 건드리지 않음
+            if date_counts[d] >= 2:
                 continue
 
-            # cleaned에서 직접 마스크 생성
             mask = (cleaned["상품명"] == menu) & (cleaned["판매일"].dt.date == d)
             if not mask.any():
                 continue
 
-            old_qty = cleaned.loc[mask, "일별수량"].values[0]
-            old_sales = cleaned.loc[mask, "일별매출"].values[0]
-
-            roll_val = subset.loc[subset["판매일"].dt.date == d, "rolling_mean"].values[0]
+            roll_vals = subset.loc[subset["판매일"].dt.date == d, "rolling_mean"]
+            roll_val = roll_vals.iloc[0] if not roll_vals.empty else np.nan
 
             if pd.isna(roll_val):
-                # NaN은 그대로 두기 → 이후 interpolate로 처리
+                # 수량/매출 모두 NaN으로 두고, 이후 단계에서 보간하도록 남김
                 cleaned.loc[mask, "일별수량"] = np.nan
                 cleaned.loc[mask, "일별매출"] = np.nan
-            else:
-                new_qty = round(roll_val)
-                unit_price = old_sales / old_qty if old_qty != 0 else 0
-                new_sales = new_qty * unit_price
+                continue
 
-                cleaned.loc[mask, "일별수량"] = new_qty
-                cleaned.loc[mask, "일별매출"] = new_sales
+            new_qty = int(round(max(0, roll_val)))
+
+            # 단가가 있으면 곱해서 매출 계산, 없으면 매출은 NaN
+            if pd.notna(unit_price):
+                new_sales = float(np.round(new_qty * unit_price, 0))
+            else:
+                new_sales = np.nan
+
+            cleaned.loc[mask, "일별수량"] = new_qty
+            cleaned.loc[mask, "일별매출"] = new_sales
 
     return cleaned
