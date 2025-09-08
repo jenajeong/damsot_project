@@ -36,80 +36,67 @@ def find_common_missing_dates(daily_sales, exclude_menus=None):
     return sorted(list(common_missing))
 
 
+# 각 메뉴별 첫 번째 메뉴단가를 추출
+def build_first_price_map(daily_sales):
+    first_price_map = {}
+    for menu, g in daily_sales.groupby("상품명"):
+        g = g.sort_values("판매일")
+        if not g.empty:
+            first_price_map[menu] = g.iloc[0]["메뉴단가"]
+        else:
+            first_price_map[menu] = None
+    return first_price_map
 
 
 # 비인기메뉴 보간
-def preprocess_unpopular_menu(df, menu_name):
-    # 전체 구간
+def preprocess_unpopular_menu(df, menu_name, first_price_map):
     start_date = pd.to_datetime(df["판매일"]).min()
     end_date = pd.to_datetime(df["판매일"]).max()
     all_days = pd.date_range(start=start_date, end=end_date, freq="D")
 
-    # 특정 메뉴만 추출 후 집계
     menu_df = (
         df[df["상품명"] == menu_name]
         .groupby("판매일")
-        .agg(
-            일별수량=("일별수량", "sum"),
-            일별매출=("일별매출", "sum")
-        )
-        .reindex(all_days, fill_value=0)   # 전체 구간에 맞춰서 0으로 채움
+        .agg(일별수량=("일별수량", "sum"))
+        .reindex(all_days, fill_value=0)
     )
 
-    # 정리
     menu_df = menu_df.reset_index().rename(columns={"index": "판매일"})
     menu_df["상품명"] = menu_name
-
+    menu_df["메뉴단가"] = first_price_map.get(menu_name, None)
     return menu_df
 
 
-
 # 신메뉴 보간
-def preprocess_new_menu(df, menu_name):
+def preprocess_new_menu(df, menu_name, first_price_map):
     menu_data = df[df["상품명"] == menu_name]
-
-    # 신메뉴의 판매개시일부터 전체마지막 판매일
     menu_start = pd.to_datetime(menu_data["판매일"].min())
     menu_end = pd.to_datetime(df["판매일"].max())
     all_days = pd.date_range(start=menu_start, end=menu_end, freq="D")
 
-    # 메뉴 집계
     menu_df = (
         menu_data.groupby("판매일")
-        .agg(일별수량=("일별수량", "sum"), 일별매출=("일별매출", "sum"))
+        .agg(일별수량=("일별수량", "sum"))
         .reindex(all_days)
     )
 
     menu_df = menu_df.reset_index().rename(columns={"index": "판매일"})
     menu_df["상품명"] = menu_name
+    menu_df["메뉴단가"] = first_price_map.get(menu_name, None)
 
-    # 단가 계산
-    unit_price = round(menu_data["일별매출"].sum() / menu_data["일별수량"].sum())
-
-    # 보간 대상 마스크 (원래 NaN이었던 row)
     mask = menu_df["일별수량"].isna()
-    nan_count = mask.sum()
-
-    if nan_count > 0:
-        # 보간 후 정수화
+    if mask.sum() > 0:
         menu_df.loc[:, "일별수량"] = (
-            menu_df["일별수량"]
-            .interpolate(method="linear")
-            .round()
-            .astype("Int64")
+            menu_df["일별수량"].interpolate(method="linear").round().astype("Int64")
         )
-
-        # 원래 NaN이었던 로우만 매출 재계산
-        menu_df.loc[mask, "일별매출"] = menu_df.loc[mask, "일별수량"] * unit_price
     else:
-        print(f"[INFO] '{menu_name}'에는 보간할 NaN 값이 없음")
+        print(f"[INFO] '{menu_name}'에는 보간할 NaN 없음")
 
     return menu_df
 
 
-
 # 메인메뉴들 보간
-def preprocess_main_menu(daily_sales, exclude_menus=None, common_missing_dates=None):
+def preprocess_main_menu(daily_sales, first_price_map, exclude_menus=None, common_missing_dates=None):
     if exclude_menus is None:
         exclude_menus = []
     if common_missing_dates is None:
@@ -120,74 +107,54 @@ def preprocess_main_menu(daily_sales, exclude_menus=None, common_missing_dates=N
     all_days = pd.date_range(start=start_date, end=end_date, freq="D")
 
     results = {}
-
     for menu in daily_sales["상품명"].unique():
         if menu in exclude_menus:
             print(f"[SKIP] {menu} 제외됨")
             continue
 
-        # 메뉴 데이터 추출
         menu_data = daily_sales[daily_sales["상품명"] == menu]
-
-        # 일별 집계 후 전체 구간 확장
         menu_df = (
             menu_data.groupby("판매일")
-            .agg(일별수량=("일별수량", "sum"), 일별매출=("일별매출", "sum"))
+            .agg(일별수량=("일별수량", "sum"))
             .reindex(all_days)
         )
         menu_df = menu_df.reset_index().rename(columns={"index": "판매일"})
         menu_df["상품명"] = menu
+        menu_df["메뉴단가"] = first_price_map.get(menu, None)
 
-        # 단가 계산
-        unit_price = round(menu_data["일별매출"].sum() / menu_data["일별수량"].sum())
-
-        # 1️⃣ 모든 메뉴 공통 결측일 → 0으로 확정
+        # 공통 결측일 → 0
         mask_common = menu_df["판매일"].isin(common_missing_dates)
         menu_df.loc[mask_common, "일별수량"] = 0
-        menu_df.loc[mask_common, "일별매출"] = 0
 
-        # 2️⃣ 그 외 NaN만 보간 (수량 → 정수 변환)
+        # 나머지 NaN 보간
         mask_other = menu_df["일별수량"].isna()
         if mask_other.sum() > 0:
-            # 보간 후 float로 유지
-            interpolated_qty = (
-                menu_df["일별수량"]
-                .interpolate(method="linear")
-                .round()
-            )
-
+            interpolated_qty = menu_df["일별수량"].interpolate(method="linear").round()
             menu_df.loc[mask_other, "일별수량"] = interpolated_qty[mask_other]
-            menu_df.loc[mask_other, "일별매출"] = menu_df.loc[mask_other, "일별수량"] * unit_price
 
         results[menu] = menu_df
 
     return results
 
 
-
 # 전체 보간 실행 로직
-def preprocess_all_menus(daily_sales, 
-                         unpopular_menus, 
-                         new_menus, 
-                         common_missing_dates=None):
+def preprocess_all_menus(daily_sales, unpopular_menus, new_menus, first_price_map, common_missing_dates=None):
     results = {}
 
-    # 비인기 메뉴 처리
+    # 비인기 메뉴
     for menu in unpopular_menus:
         print(f"[PROCESS-UNPOPULAR] {menu}")
-        results[menu] = preprocess_unpopular_menu(daily_sales, menu)
+        results[menu] = preprocess_unpopular_menu(daily_sales, menu, first_price_map)
 
-    # 신메뉴 처리
+    # 신메뉴
     for menu in new_menus:
         print(f"[PROCESS-NEW] {menu}")
-        results[menu] = preprocess_new_menu(daily_sales, menu)
+        results[menu] = preprocess_new_menu(daily_sales, menu, first_price_map)
 
-    # 메인 메뉴 처리 (나머지)
+    # 메인 메뉴
     exclude_menus = unpopular_menus + new_menus
     main_results = preprocess_main_menu(
-        daily_sales,
-        exclude_menus=exclude_menus,
-        common_missing_dates=common_missing_dates
+        daily_sales, first_price_map, exclude_menus=exclude_menus, common_missing_dates=common_missing_dates
     )
     results.update(main_results)
 
