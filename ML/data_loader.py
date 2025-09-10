@@ -16,3 +16,8 @@ def load_from_gsheet():
 
     return wks.get_as_df()
 
+
+# df = load_from_gsheet()
+
+# # CSV로 저장
+# df.to_csv("C:/DAM_project/damsot_project/ML/Data/raw_dataset.csv", index=False, encoding="utf-8-sig")
