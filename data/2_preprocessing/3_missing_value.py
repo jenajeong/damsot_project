@@ -1,7 +1,8 @@
 import pandas as pd
 from utils.interpolation_utils import (
     preprocess_all_menus,
-    find_common_missing_dates
+    find_common_missing_dates,
+    build_first_price_map
 )
 from utils.data_set_get import load_sheet_data, load_config, upload_to_sheet
 
@@ -16,12 +17,15 @@ unpopular_list = ["가지치즈솥밥", "우삼겹스키야키"]
 new_list = ["우삼겹솥밥", "고등어솥밥"]
 common_missing_dates = find_common_missing_dates(df, exclude_menus=unpopular_list+new_list) 
 
+price_map = build_first_price_map(df)
+
 # 전체 보간 전처리 실행
 all_results = preprocess_all_menus(
     df,
     unpopular_menus=unpopular_list,
     new_menus=new_list,
-    common_missing_dates=common_missing_dates
+    common_missing_dates=common_missing_dates,
+    first_price_map = price_map
 )
 
 all_df = pd.concat(all_results.values(), ignore_index=True)

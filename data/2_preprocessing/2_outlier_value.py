@@ -53,6 +53,7 @@ outlier_summary = detect_outliers_by_iqr(daily_sales)
 
 # 이상치 대체 (rolling mean, 이벤트일 제외)
 cleaned = replace_outliers_with_rolling_mean(daily_sales, outlier_summary, window=3)
+cleaned = cleaned.drop(columns="일별매출", axis=1)
 
 values = cleaned.astype(str).values.tolist()
 

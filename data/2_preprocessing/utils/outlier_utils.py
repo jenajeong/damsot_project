@@ -57,14 +57,12 @@ def replace_outliers_with_rolling_mean(daily_sales, outlier_summary, window=3):
             date_counts[d] += 1
             menu_outliers[menu].append((d, val))
 
-    # 3) 메뉴별로 rolling mean 수량 보정 + 메뉴 첫단가로 매출 계산
+    # 3) 메뉴별로 rolling mean 수량 보정만 수행
     for menu, outliers in menu_outliers.items():
         subset = cleaned[cleaned["상품명"] == menu].sort_values("판매일").copy()
         subset["rolling_mean"] = subset["일별수량"].rolling(
             window=window, center=True, min_periods=1
         ).mean()
-
-        unit_price = first_price_map.get(menu, np.nan)
 
         for d, _ in outliers:
             # 이벤트일(같은 날짜 이상치 2개 이상)은 건드리지 않음
@@ -79,20 +77,13 @@ def replace_outliers_with_rolling_mean(daily_sales, outlier_summary, window=3):
             roll_val = roll_vals.iloc[0] if not roll_vals.empty else np.nan
 
             if pd.isna(roll_val):
-                # 수량/매출 모두 NaN으로 두고, 이후 단계에서 보간하도록 남김
                 cleaned.loc[mask, "일별수량"] = np.nan
-                cleaned.loc[mask, "일별매출"] = np.nan
                 continue
 
             new_qty = int(round(max(0, roll_val)))
-
-            # 단가가 있으면 곱해서 매출 계산, 없으면 매출은 NaN
-            if pd.notna(unit_price):
-                new_sales = float(np.round(new_qty * unit_price, 0))
-            else:
-                new_sales = np.nan
-
             cleaned.loc[mask, "일별수량"] = new_qty
-            cleaned.loc[mask, "일별매출"] = new_sales
+
+    # 4) 메뉴단가 컬럼 추가 (모든 행에 매핑)
+    cleaned["메뉴단가"] = cleaned["상품명"].map(first_price_map)
 
     return cleaned
