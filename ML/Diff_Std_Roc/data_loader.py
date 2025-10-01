@@ -2,7 +2,7 @@ import os
 import pygsheets
 import pandas as pd
 from dotenv import load_dotenv
-
+import holidays
 
 def load_from_gsheet():
     load_dotenv()  # .env에서 환경변수 불러오기
@@ -19,6 +19,17 @@ def load_from_gsheet():
     # 날짜 변환
     df['판매일'] = pd.to_datetime(df['판매일'])
     df = df.sort_values('판매일')
+
+    # --- [신규] 주말 및 공휴일 피처 생성 ---
+    df['is_weekend'] = df['판매일'].dt.dayofweek.isin([5, 6]).astype(int)
+    
+    kr_holidays = holidays.KR()
+    df['is_holiday'] = df['판매일'].apply(lambda x: 1 if x in kr_holidays else 0)
+    
+    # 공휴일 전후일 피처 추가
+    df['before_holiday'] = df['is_holiday'].shift(-1).fillna(0).astype(int)
+    df['after_holiday'] = df['is_holiday'].shift(1).fillna(0).astype(int)
+    # --- [신규] 피처 생성 끝 ---
 
     # Lag & Rolling Feature 생성
     df['lag_1'] = df.groupby('상품명')['일별수량'].shift(1)
@@ -67,7 +78,7 @@ def load_from_gsheet():
     print(f"전체 데이터 크기: {df.shape}")
     print(f"메뉴 종류: {df['상품명'].nunique()}개")
     print(f"데이터 기간: {df['판매일'].min()} ~ {df['판매일'].max()}")
-    print(f"추가된 피처: {[c for c in df.columns if 'lag' in c or 'roll' in c]}")
+    print(f"추가된 피처: {[c for c in df.columns if 'lag' in c or 'roll' in c or 'holiday' in c or 'weekend' in c]}")
 
     return df
 
