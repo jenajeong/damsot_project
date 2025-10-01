@@ -2,7 +2,6 @@ import os
 import pygsheets
 import pandas as pd
 from dotenv import load_dotenv
-import holidays
 
 def load_from_gsheet():
     load_dotenv()  # .env에서 환경변수 불러오기
@@ -20,15 +19,20 @@ def load_from_gsheet():
     df['판매일'] = pd.to_datetime(df['판매일'])
     df = df.sort_values('판매일')
 
-    # --- [신규] 주말 및 공휴일 피처 생성 ---
-    df['is_weekend'] = df['판매일'].dt.dayofweek.isin([5, 6]).astype(int)
-    
-    kr_holidays = holidays.KR()
-    df['is_holiday'] = df['판매일'].apply(lambda x: 1 if x in kr_holidays else 0)
-    
-    # 공휴일 전후일 피처 추가
-    df['before_holiday'] = df['is_holiday'].shift(-1).fillna(0).astype(int)
-    df['after_holiday'] = df['is_holiday'].shift(1).fillna(0).astype(int)
+    # --- [신규] 주요 명절 피처 생성 ---
+    # 2024-2025년 설날/추석 연휴 기간 정의
+    major_holidays = [
+        # 2024년 설날
+        '2024-02-09', '2024-02-10', '2024-02-11', '2024-02-12',
+        # 2024년 추석
+        '2024-09-16', '2024-09-17', '2024-09-18',
+        # 2025년 설날
+        '2025-01-28', '2025-01-29', '2025-01-30',
+        # 2025년 추석
+        '2025-10-05', '2025-10-06', '2025-10-07'
+    ]
+    major_holidays = pd.to_datetime(major_holidays)
+    df['is_major_holiday'] = df['판매일'].isin(major_holidays).astype(int)
     # --- [신규] 피처 생성 끝 ---
 
     # Lag & Rolling Feature 생성
@@ -78,7 +82,7 @@ def load_from_gsheet():
     print(f"전체 데이터 크기: {df.shape}")
     print(f"메뉴 종류: {df['상품명'].nunique()}개")
     print(f"데이터 기간: {df['판매일'].min()} ~ {df['판매일'].max()}")
-    print(f"추가된 피처: {[c for c in df.columns if 'lag' in c or 'roll' in c or 'holiday' in c or 'weekend' in c]}")
+    print(f"추가된 피처: {[c for c in df.columns if 'lag' in c or 'roll' in c or 'holiday' in c]}")
 
     return df
 
