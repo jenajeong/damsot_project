@@ -44,11 +44,6 @@ def load_from_gsheet():
     df['diff_1'] = df.groupby('상품명')['일별수량'].shift(1).diff(1)
     df['diff_7'] = df.groupby('상품명')['일별수량'].shift(1).diff(7)
 
-    print("===== 디버깅 출력: diff_1 계산 확인 =====")
-    # 각 상품별로 상위 3개 행의 '일별수량'과 'diff_1' 값을 출력
-    print(df.groupby('상품명')[['일별수량', 'diff_1']].head(3))
-    print("========================================")
-
     df['roll_std_3'] = (
     df.groupby('상품명')['일별수량']
       .shift(1)
