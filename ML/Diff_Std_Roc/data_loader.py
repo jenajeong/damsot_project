@@ -41,6 +41,8 @@ def load_from_gsheet():
         .transform(lambda x: x.rolling(window=14, min_periods=1).mean())
     )
 
+    df['dev_from_mean_7'] = df['lag_1'] - df['roll_mean_7']
+
     df['diff_1'] = df.groupby('상품명')['일별수량'].shift(1).diff(1)
     df['diff_7'] = df.groupby('상품명')['일별수량'].shift(1).diff(7)
 
