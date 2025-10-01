@@ -22,6 +22,7 @@ def load_from_gsheet():
 
     # Lag & Rolling Feature 생성
     df['lag_1'] = df.groupby('상품명')['일별수량'].shift(1)
+    df['lag_2'] = df.groupby('상품명')['일별수량'].shift(2)
     df['lag_7'] = df.groupby('상품명')['일별수량'].shift(7)
 
     df['roll_mean_3'] = (
