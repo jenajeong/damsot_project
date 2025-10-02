@@ -1,1 +1,13 @@
 *.json
+
+env/
+
+.env
+
+Data/
+
+/env
+
+/Data
+
+__pycache__/
