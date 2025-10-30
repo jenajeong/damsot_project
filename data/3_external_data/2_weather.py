@@ -9,8 +9,8 @@ key_path, sheet_id, ASOS_API, BASE_URL = load_config()
 stn_id = "104"  # 서울
 
 # 요청 기간
-tm1 = "20240823"
-tm2 = "20250831"
+tm1 = "20250901"
+tm2 = "20251028"
 
 # API 요청 URL
 url = f"{BASE_URL}?tm1={tm1}&tm2={tm2}&stn={stn_id}&authKey={ASOS_API}"
@@ -69,7 +69,7 @@ weather_df = weather_sel.rename(columns={
 })
 
 # 데이터 불러오기
-df = load_sheet_data(key_path, sheet_id, "요일")
+df = load_sheet_data(key_path, sheet_id, "요일", start_date='2025-09-01', end_date='2025-10-28')
 
 
 # 2. 날짜 형식 통일 (문자열 → datetime)

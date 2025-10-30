@@ -9,8 +9,11 @@ scripts = [
     os.path.join(BASE_DIR, "1_crawling", "1_pos_data.py"),
     os.path.join(BASE_DIR, "1_crawling", "2_receipt_upload.py"),
     os.path.join(BASE_DIR, "2_preprocessing", "1_merge_data.py"),
-    os.path.join(BASE_DIR, "2_preprocessing", "2_outlier_value.py"),
-    os.path.join(BASE_DIR, "2_preprocessing", "3_missing_value.py"),
+    os.path.join(BASE_DIR, "2_preprocessing", "2_rename_menu.py"),
+    os.path.join(BASE_DIR, "2_preprocessing", "3_outlier_value.py"),
+    os.path.join(BASE_DIR, "2_preprocessing", "4_missing_value.py"),
+    os.path.join(BASE_DIR, "3_external_data", "1_date.py"),
+    os.path.join(BASE_DIR, "3_external_data", "2_weather.py"),
 ]
 
 for script in scripts:

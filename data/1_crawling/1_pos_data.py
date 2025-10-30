@@ -69,7 +69,7 @@ end_date = (today - timedelta(days=1))
 
 # ==========================
 # # 원하는 날짜로 수동 설정
-start_date = datetime(2025, 8, 6)
+start_date = datetime(2025, 10, 9)
 # ==========================
 
 start_date = start_date.strftime("%Y-%m-%d")

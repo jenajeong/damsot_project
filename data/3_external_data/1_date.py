@@ -4,7 +4,7 @@ import numpy as np
 from utils.data_set_get import load_config, upload_to_sheet, load_sheet_data
 
 key_path, sheet_id, ASOS_API, BASE_URL = load_config()
-df = load_sheet_data(key_path, sheet_id, "결측치 보간")
+df = load_sheet_data(key_path, sheet_id, "결측치 보간", start_date='2025-09-01', end_date='2025-10-28')
 
 # 요일 추출 (월=0, 일=6)
 df["판매일"] = pd.to_datetime(df["판매일"])

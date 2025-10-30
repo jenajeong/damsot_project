@@ -7,31 +7,12 @@ from utils.outlier_utils import detect_outliers_by_iqr, replace_outliers_with_ro
 key_path, sheet_id1, sheet_id2 = load_config()
 
 # 시트 데이터 불러오기
-df = load_sheet_data(key_path, sheet_id2, "총매출 데이터(전처리 전)")
+df = load_sheet_data(key_path, sheet_id2, "총매출 데이터", start_date='2025-09-01', end_date='2025-10-28')
 
 # 숫자형 변환
 df['결제 합계'] = int_format(df, '결제 합계')
 df['매출'] = int_format(df, '매출')
 
-# 메뉴명 매핑
-menu_map = {
-    '★매운가지치즈★솥밥': '매운가지치즈솥밥',
-    '★우삼겹스키야키★': '우삼겹스키야키',
-    '★매운가지치즈 ★ 더맵게': '매운가지치즈솥밥',
-    '매운가지솥밥 더맵게': '매운가지솥밥',
-    '매운가지치즈★솥밥': '매운가지치즈솥밥',
-    '매운가지치즈 ★ 더맵게': '매운가지치즈솥밥',
-    '매운가지치즈 ★더맵게x2': '매운가지치즈솥밥',
-    '매운가지솥밥★더맵게': '매운가지솥밥',
-    '★매운가지치즈★더맵게': '매운가지치즈솥밥',
-    '매운가지솥밥☆더맵게x2': '매운가지솥밥',
-    '★가지치즈★솥밥': '가지치즈솥밥',
-    '매운가지치즈☆더맵게x2': '매운가지치즈솥밥',
-    '테라 캔':'테라',
-    '매운가지솥밥 더맵게x2':'매운가지솥밥',
-    '★매운가지치즈 ★더맵게x2':'매운가지치즈솥밥'
-}
-df['상품명'] = df['상품명'].map(menu_map).fillna(df['상품명'])
 
 # 메인 메뉴 필터링 후 일별 판매량 집계
 df["판매일"] = pd.to_datetime(df["판매일시"]).dt.date

@@ -10,7 +10,7 @@ from utils.data_set_get import load_sheet_data, load_config, upload_to_sheet
 key_path, sheet_id1, sheet_id2 = load_config()
 
 # 시트 데이터 불러오기
-df = load_sheet_data(key_path, sheet_id2, "이상치 대체")
+df = load_sheet_data(key_path, sheet_id2, "이상치 대체", start_date='2025-09-01', end_date='2025-10-28')
 
 # 공통 결측일 탐색
 unpopular_list = ["가지치즈솥밥", "우삼겹스키야키"]
